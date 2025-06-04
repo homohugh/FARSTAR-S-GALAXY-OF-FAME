@@ -1,0 +1,29 @@
+farstar-galaxy-of-fame/
+├── contracts/
+│   ├── FarstarNFT.sol
+│   └── README.md
+├── backend/
+│   ├── src/
+│   │   └── server.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── .env.example
+├── frontend/
+│   ├── public/
+│   │   └── index.html
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── GalaxyView.tsx
+│   │   ├── StarMesh.tsx
+│   │   ├── StarModal.tsx
+│   │   ├── MintModal.tsx
+│   │   └── FarstarNFT.json   # ABI file
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── .env.example
+├── scripts/
+│   ├── deploy.js
+│   └── verify.js
+├── .gitignore
+├── README.md
+└── LICENSE
