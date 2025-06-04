@@ -1,0 +1,89 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract FarstarNFT is ERC721URIStorage, Ownable {
+    uint256 public nextTokenId;
+    uint256 public constant GOLD_MAX = 10000;
+    uint256 public mintPrice = 1e6;
+    address public airdropFund;
+    address public appCreator;
+
+    mapping(uint256 => string) public messages;
+    mapping(uint256 => string) public farcasterUsernames;
+    mapping(uint256 => uint256) public fids;
+
+    event FarstarMinted(address indexed minter, uint256 indexed tokenId, uint256 fid, string username, string message, bool gold);
+
+    constructor(address _airdropFund, address _appCreator) ERC721("Farstar", "FARSTAR") {
+        airdropFund = _airdropFund;
+        appCreator = _appCreator;
+    }
+
+    function mint(uint256 fid, string memory username, string memory message) public payable {
+        require(msg.value == mintPrice, "Incorrect mint price");
+        uint256 tokenId = nextTokenId++;
+        _safeMint(msg.sender, tokenId);
+        messages[tokenId] = message;
+        farcasterUsernames[tokenId] = username;
+        fids[tokenId] = fid;
+
+        payable(airdropFund).transfer(msg.value / 2);
+        payable(appCreator).transfer(msg.value / 2);
+
+        emit FarstarMinted(msg.sender, tokenId, fid, username, message, tokenId < GOLD_MAX);
+    }
+
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        require(_exists(tokenId), "Nonexistent token");
+        string memory json = string(abi.encodePacked(
+            '{',
+                '"name": "FARSTAR #', Strings.toString(tokenId), '",',
+                '"description": "Farstar Galaxy of Fame NFT. Gold: ', tokenId < GOLD_MAX ? "true" : "false", '",',
+                '"attributes": [',
+                    '{ "trait_type": "FID", "value": "', Strings.toString(fids[tokenId]), '" },',
+                    '{ "trait_type": "Username", "value": "', farcasterUsernames[tokenId], '" },',
+                    '{ "trait_type": "Gold", "value": "', tokenId < GOLD_MAX ? "Yes" : "No", '" }',
+                '],',
+                '"custom_message": "', messages[tokenId], '"',
+            '}'
+        ));
+        return string(abi.encodePacked("data:application/json;base64,", base64(bytes(json))));
+    }
+
+    function base64(bytes memory data) internal pure returns (string memory) {
+        string memory TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        string memory result = new string(4 * ((data.length + 2) / 3));
+        bytes memory table = bytes(TABLE);
+        bytes memory r = bytes(result);
+        uint256 i = 0;
+        uint256 j = 0;
+        for (; i + 3 <= data.length; i += 3) {
+            (r[j], r[j+1], r[j+2], r[j+3]) = (
+                table[uint8(data[i] >> 2)],
+                table[uint8(((data[i] & 0x03) << 4) | (data[i+1] >> 4))],
+                table[uint8(((data[i+1] & 0x0f) << 2) | (data[i+2] >> 6))],
+                table[uint8(data[i+2] & 0x3f)]
+            );
+            j += 4;
+        }
+        if (i + 2 == data.length) {
+            (r[j], r[j+1], r[j+2], r[j+3]) = (
+                table[uint8(data[i] >> 2)],
+                table[uint8(((data[i] & 0x03) << 4) | (data[i+1] >> 4))],
+                table[uint8((data[i+1] & 0x0f) << 2)],
+                "="
+            );
+        } else if (i + 1 == data.length) {
+            (r[j], r[j+1], r[j+2], r[j+3]) = (
+                table[uint8(data[i] >> 2)],
+                table[uint8((data[i] & 0x03) << 4)],
+                "=",
+                "="
+            );
+        }
+        return string(r);
+    }
+}
